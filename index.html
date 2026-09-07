@@ -702,6 +702,10 @@
         align-items: center;
         padding: 10px 18px 14px;
         border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: var(--bg-elevated);
+        z-index: 2;
     }
 
     .modal-title {
@@ -721,7 +725,28 @@
         cursor: pointer;
     }
 
+    .modal-check {
+        color: #fff;
+        background: var(--plate-green);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-check svg { width: 16px; height: 16px; }
+
     .modal-body { padding: 16px 18px; }
+
+    /* Keeps a primary action (like Save Routine) visible even when the
+       modal's content is long and scrolls — e.g. the exercise search
+       results in the routine builder, which can run to hundreds of rows. */
+    .modal-sticky-footer {
+        position: sticky;
+        bottom: 0;
+        background: var(--bg-elevated);
+        padding: 12px 0 4px;
+        margin-top: 10px;
+        box-shadow: 0 -10px 14px -6px rgba(0, 0, 0, 0.25);
+    }
 
     .video-wrap {
         position: relative;
@@ -961,8 +986,8 @@
 
     .set-table-header, .set-row {
         display: grid;
-        grid-template-columns: 28px 1fr 1fr 30px;
-        gap: 8px;
+        grid-template-columns: 22px 0.8fr 0.7fr 0.9fr 0.9fr 20px;
+        gap: 6px;
         align-items: center;
         margin-bottom: 6px;
     }
@@ -1745,7 +1770,12 @@
         <div class="modal-handle"></div>
         <div class="modal-header">
             <span class="modal-title" id="modalTitle">Title</span>
-            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <button class="modal-close modal-check" id="modalCheckBtn" style="display:none;" aria-label="Save">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12l5 5L20 6"/></svg>
+                </button>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
         </div>
         <div class="modal-body" id="modalBody"></div>
     </div>
@@ -1775,26 +1805,10 @@ const CATEGORY_COLORS = {
 };
 
 let exercises = [
-    { id: 'e1', icon: '💪', name: 'Barbell Bench Press', category: 'Push', muscle: 'Chest', equipment: 'Barbell', difficulty: 2, video: 'https://www.youtube.com/embed/BkC7bIGqgjs', custom: false },
-    { id: 'e2', icon: '🏋️', name: 'Overhead Shoulder Press', category: 'Push', muscle: 'Shoulders', equipment: 'Dumbbell', difficulty: 2, video: 'https://www.youtube.com/embed/Did01dFR3Lk', custom: false },
-    { id: 'e3', icon: '💪', name: 'Incline Dumbbell Press', category: 'Push', muscle: 'Chest', equipment: 'Dumbbell', difficulty: 2, video: 'https://www.youtube.com/embed/VDU5bzE2qOE', custom: false },
-    { id: 'e4', icon: '🏋️', name: 'Dumbbell Lateral Raise', category: 'Push', muscle: 'Shoulders', equipment: 'Dumbbell', difficulty: 1, video: 'https://www.youtube.com/embed/nnH63icHYXY', custom: false },
-    { id: 'e5', icon: '💪', name: 'Tricep Rope Pushdown', category: 'Push', muscle: 'Triceps', equipment: 'Cable', difficulty: 1, video: 'https://www.youtube.com/embed/d-ySLTHUgQA', custom: false },
-    { id: 'e6', icon: '💪', name: 'Push-Up', category: 'Push', muscle: 'Chest', equipment: 'Bodyweight', difficulty: 1, video: 'https://www.youtube.com/embed/WDIpL0pjun0', custom: false },
-    { id: 'e7', icon: '🔙', name: 'Lat Pulldown', category: 'Pull', muscle: 'Back', equipment: 'Cable', difficulty: 1, video: 'https://www.youtube.com/embed/SALxEARiMkw', custom: false },
-    { id: 'e8', icon: '🔙', name: 'Seated Cable Row', category: 'Pull', muscle: 'Back', equipment: 'Cable', difficulty: 1, video: 'https://www.youtube.com/embed/GZbfZ033f74', custom: false },
-    { id: 'e9', icon: '🏋️', name: 'Face Pull', category: 'Pull', muscle: 'Rear Delts', equipment: 'Cable', difficulty: 1, video: 'https://www.youtube.com/embed/wnPX6Fwe-Fg', custom: false },
-    { id: 'e10', icon: '💪', name: 'Dumbbell Bicep Curl', category: 'Pull', muscle: 'Biceps', equipment: 'Dumbbell', difficulty: 1, video: 'https://www.youtube.com/embed/6DeLZ6cbgWQ', custom: false },
-    { id: 'e11', icon: '💪', name: 'Hammer Curl', category: 'Pull', muscle: 'Biceps', equipment: 'Dumbbell', difficulty: 1, video: 'https://www.youtube.com/embed/zC3nLlEvin4', custom: false },
-    { id: 'e12', icon: '🔙', name: 'Conventional Deadlift', category: 'Pull', muscle: 'Back / Hamstrings', equipment: 'Barbell', difficulty: 3, video: 'https://www.youtube.com/embed/GxsLrTzyGUU', custom: false },
-    { id: 'e13', icon: '🦵', name: 'Barbell Back Squat', category: 'Legs', muscle: 'Quads', equipment: 'Barbell', difficulty: 2, video: 'https://www.youtube.com/embed/PGFvWqAQRm8', custom: false },
-    { id: 'e14', icon: '🦵', name: 'Romanian Deadlift', category: 'Legs', muscle: 'Hamstrings', equipment: 'Barbell', difficulty: 2, video: 'https://www.youtube.com/embed/KN5vN3JskqI', custom: false },
-    { id: 'e15', icon: '🧘', name: 'Plank', category: 'Core', muscle: 'Abs', equipment: 'Bodyweight', difficulty: 1, video: 'https://www.youtube.com/embed/BQu26ABuVS0', custom: false },
-    // ---- Expanded library (imported) — 232 additional exercises ----
-    { id: 'e4c7929f-26c6-4837-a7d4-83383d69db96', icon: '💪', name: 'Barbell Bench Press', category: 'Push', muscle: 'Chest', equipment: 'Barbell + Bench', difficulty: 2, video: null, custom: false },
+    { id: 'e4c7929f-26c6-4837-a7d4-83383d69db96', icon: '💪', name: 'Barbell Bench Press', category: 'Push', muscle: 'Chest', equipment: 'Barbell + Bench', difficulty: 2, video: 'https://www.youtube.com/embed/BkC7bIGqgjs', custom: false },
     { id: 'e1bada6d-2d3f-4685-b99d-063606d438e6', icon: '💪', name: 'Dumbbell Bench Press', category: 'Push', muscle: 'Chest', equipment: 'Dumbbells + Bench', difficulty: 1, video: null, custom: false },
     { id: '9d3200f7-bcbd-4215-b7cc-3f527e161194', icon: '💪', name: 'Incline Barbell Bench Press', category: 'Push', muscle: 'Upper Chest', equipment: 'Barbell + Incline Bench', difficulty: 2, video: null, custom: false },
-    { id: 'b65ef5b0-9ff0-49ae-895f-51ad6be009f0', icon: '💪', name: 'Incline Dumbbell Press', category: 'Push', muscle: 'Upper Chest', equipment: 'Dumbbells + Incline Bench', difficulty: 1, video: null, custom: false },
+    { id: 'b65ef5b0-9ff0-49ae-895f-51ad6be009f0', icon: '💪', name: 'Incline Dumbbell Press', category: 'Push', muscle: 'Upper Chest', equipment: 'Dumbbells + Incline Bench', difficulty: 1, video: 'https://www.youtube.com/embed/VDU5bzE2qOE', custom: false },
     { id: '393ab071-4abd-4752-ad23-6949e5d8f54e', icon: '💪', name: 'Decline Barbell Bench Press', category: 'Push', muscle: 'Lower Chest', equipment: 'Barbell + Decline Bench', difficulty: 2, video: null, custom: false },
     { id: '527f51e6-9123-474b-b972-94bd8747f943', icon: '💪', name: 'Decline Dumbbell Press', category: 'Push', muscle: 'Lower Chest', equipment: 'Dumbbells + Decline Bench', difficulty: 2, video: null, custom: false },
     { id: 'b926025c-5b8f-4b31-bd0d-14f1e26e5008', icon: '💪', name: 'Dumbbell Fly', category: 'Push', muscle: 'Chest', equipment: 'Dumbbells + Bench', difficulty: 1, video: null, custom: false },
@@ -1803,7 +1817,7 @@ let exercises = [
     { id: '10e80088-b64d-435e-aca6-c8743dfe5de9', icon: '💪', name: 'Low Cable Fly', category: 'Push', muscle: 'Upper Chest', equipment: 'Cable Machine', difficulty: 1, video: null, custom: false },
     { id: 'd2c47821-0dca-4ad4-9226-77fb9af868fc', icon: '💪', name: 'High Cable Fly', category: 'Push', muscle: 'Lower Chest', equipment: 'Cable Machine', difficulty: 1, video: null, custom: false },
     { id: '4c315c53-22c0-40da-9fbc-3adf8be369c8', icon: '💪', name: 'Pec Deck', category: 'Push', muscle: 'Chest', equipment: 'Pec Deck Machine', difficulty: 1, video: null, custom: false },
-    { id: '5361c307-b9c7-40c2-974f-0cbb6450c601', icon: '💪', name: 'Push-Up', category: 'Push', muscle: 'Chest', equipment: 'Bodyweight', difficulty: 1, video: null, custom: false },
+    { id: '5361c307-b9c7-40c2-974f-0cbb6450c601', icon: '💪', name: 'Push-Up', category: 'Push', muscle: 'Chest', equipment: 'Bodyweight', difficulty: 1, video: 'https://www.youtube.com/embed/WDIpL0pjun0', custom: false },
     { id: '7794d28a-b6ab-4392-8912-c2e9b63e4663', icon: '💪', name: 'Wide-Grip Push-Up', category: 'Push', muscle: 'Chest', equipment: 'Bodyweight', difficulty: 1, video: null, custom: false },
     { id: '567c82d6-25a4-48cb-a6cf-8eb9f119bedd', icon: '💪', name: 'Diamond Push-Up', category: 'Push', muscle: 'Triceps', equipment: 'Bodyweight', difficulty: 2, video: null, custom: false },
     { id: '40475052-bf77-4b33-868d-cda319f446a0', icon: '💪', name: 'Decline Push-Up', category: 'Push', muscle: 'Upper Chest', equipment: 'Bodyweight', difficulty: 2, video: null, custom: false },
@@ -1821,7 +1835,7 @@ let exercises = [
     { id: '6ae1a23b-e6e9-4f0c-848e-b55a269f84f4', icon: '🏋️', name: 'Dumbbell Front Raise', category: 'Push', muscle: 'Front Delts', equipment: 'Dumbbells', difficulty: 1, video: null, custom: false },
     { id: 'c5854cc0-1521-4ae6-a1eb-ce521eb6bec5', icon: '🏋️', name: 'Plate Front Raise', category: 'Push', muscle: 'Front Delts', equipment: 'Weight Plate', difficulty: 1, video: null, custom: false },
     { id: 'f94380f8-6c06-4803-b994-734f5d86febb', icon: '🏋️', name: 'Cable Front Raise', category: 'Push', muscle: 'Front Delts', equipment: 'Cable Machine', difficulty: 1, video: null, custom: false },
-    { id: '165060b9-e490-42d4-b0c4-13e19e48f0c4', icon: '🏋️', name: 'Dumbbell Lateral Raise', category: 'Push', muscle: 'Side Delts', equipment: 'Dumbbells', difficulty: 1, video: null, custom: false },
+    { id: '165060b9-e490-42d4-b0c4-13e19e48f0c4', icon: '🏋️', name: 'Dumbbell Lateral Raise', category: 'Push', muscle: 'Side Delts', equipment: 'Dumbbells', difficulty: 1, video: 'https://www.youtube.com/embed/nnH63icHYXY', custom: false },
     { id: 'c16226ca-4ce0-4ac6-ba9e-2d073616eeb9', icon: '🏋️', name: 'Cable Lateral Raise', category: 'Push', muscle: 'Side Delts', equipment: 'Cable Machine', difficulty: 1, video: null, custom: false },
     { id: '571fc70e-aca8-48d4-bcb5-b70b499e26e5', icon: '🏋️', name: 'Machine Lateral Raise', category: 'Push', muscle: 'Side Delts', equipment: 'Lateral Raise Machine', difficulty: 1, video: null, custom: false },
     { id: '44d95cb8-67af-4c41-933f-1d3d1c88b903', icon: '🏋️', name: 'Bent-Over Dumbbell Lateral Raise', category: 'Push', muscle: 'Rear Delts', equipment: 'Dumbbells', difficulty: 1, video: null, custom: false },
@@ -1846,7 +1860,7 @@ let exercises = [
     { id: '2e34c863-5bf5-460c-ada1-0e714af0ba46', icon: '🔙', name: 'Neutral-Grip Pull-Up', category: 'Pull', muscle: 'Lats', equipment: 'Pull-Up Bar', difficulty: 2, video: null, custom: false },
     { id: '36a15a76-57d8-4407-9c20-53bc4a1b8b46', icon: '🔙', name: 'Chin-Up', category: 'Pull', muscle: 'Lats', equipment: 'Pull-Up Bar', difficulty: 2, video: null, custom: false },
     { id: '6cca7864-0ce9-4543-ba7a-88d88023d439', icon: '🔙', name: 'Assisted Pull-Up', category: 'Pull', muscle: 'Back', equipment: 'Assisted Pull-Up Machine', difficulty: 1, video: null, custom: false },
-    { id: 'b4fc5370-e2b8-42ae-9b47-90303e9465f2', icon: '🔙', name: 'Lat Pulldown', category: 'Pull', muscle: 'Lats', equipment: 'Cable Machine', difficulty: 1, video: null, custom: false },
+    { id: 'b4fc5370-e2b8-42ae-9b47-90303e9465f2', icon: '🔙', name: 'Lat Pulldown', category: 'Pull', muscle: 'Lats', equipment: 'Cable Machine', difficulty: 1, video: 'https://www.youtube.com/embed/SALxEARiMkw', custom: false },
     { id: '01ba5d8d-0f31-461b-809d-b21b48ddf567', icon: '🔙', name: 'Wide-Grip Lat Pulldown', category: 'Pull', muscle: 'Lats', equipment: 'Cable Machine', difficulty: 1, video: null, custom: false },
     { id: '7e781cf8-ec7e-49a0-92a1-e73840c3b7e3', icon: '🔙', name: 'Close-Grip Lat Pulldown', category: 'Pull', muscle: 'Lats', equipment: 'Cable Machine', difficulty: 1, video: null, custom: false },
     { id: 'd7f3dce3-43ee-4966-bdba-24765fab9b9a', icon: '🔙', name: 'Neutral-Grip Lat Pulldown', category: 'Pull', muscle: 'Lats', equipment: 'Cable Machine', difficulty: 1, video: null, custom: false },
@@ -1856,16 +1870,16 @@ let exercises = [
     { id: '4459078d-3911-4afc-b8b2-e56172a779e4', icon: '🔙', name: 'Pendlay Row', category: 'Pull', muscle: 'Upper Back', equipment: 'Barbell', difficulty: 3, video: null, custom: false },
     { id: '038b9d77-4f25-4a24-9e1f-b5d480abc0e3', icon: '🔙', name: 'Dumbbell Row', category: 'Pull', muscle: 'Lats', equipment: 'Dumbbell + Bench', difficulty: 1, video: null, custom: false },
     { id: '45946de4-665c-465f-91e6-18e0e76afb00', icon: '🔙', name: 'Single-Arm Cable Row', category: 'Pull', muscle: 'Lats', equipment: 'Cable Machine', difficulty: 1, video: null, custom: false },
-    { id: '7d411df9-75b5-487c-bff3-c949fbb7c592', icon: '🔙', name: 'Seated Cable Row', category: 'Pull', muscle: 'Upper Back', equipment: 'Cable Machine', difficulty: 1, video: null, custom: false },
+    { id: '7d411df9-75b5-487c-bff3-c949fbb7c592', icon: '🔙', name: 'Seated Cable Row', category: 'Pull', muscle: 'Upper Back', equipment: 'Cable Machine', difficulty: 1, video: 'https://www.youtube.com/embed/GZbfZ033f74', custom: false },
     { id: '326e98f7-d221-4fc3-a12f-9da7f01d5e34', icon: '🔙', name: 'Close-Grip Cable Row', category: 'Pull', muscle: 'Upper Back', equipment: 'Cable Machine', difficulty: 1, video: null, custom: false },
     { id: 'acb1b94f-10fa-4e44-be42-709dc3e48ddc', icon: '🔙', name: 'T-Bar Row', category: 'Pull', muscle: 'Upper Back', equipment: 'T-Bar Machine', difficulty: 2, video: null, custom: false },
     { id: '6b96f75a-4b0a-4862-82e0-6d0afa57e960', icon: '🔙', name: 'Chest-Supported Row', category: 'Pull', muscle: 'Upper Back', equipment: 'Machine / Dumbbells', difficulty: 1, video: null, custom: false },
     { id: 'eaa26189-6b74-4987-96e4-a9b539861a5b', icon: '🔙', name: 'Machine Row', category: 'Pull', muscle: 'Upper Back', equipment: 'Row Machine', difficulty: 1, video: null, custom: false },
     { id: '7b97704e-ecfe-4cbc-b7d1-485cde4db0c6', icon: '🔙', name: 'Inverted Row', category: 'Pull', muscle: 'Upper Back', equipment: 'Bar / Smith Machine', difficulty: 1, video: null, custom: false },
-    { id: '26f3c3f7-330b-46d4-a6c7-6aedba86a87d', icon: '🏋️', name: 'Face Pull', category: 'Pull', muscle: 'Rear Delts', equipment: 'Cable Machine', difficulty: 1, video: null, custom: false },
+    { id: '26f3c3f7-330b-46d4-a6c7-6aedba86a87d', icon: '🏋️', name: 'Face Pull', category: 'Pull', muscle: 'Rear Delts', equipment: 'Cable Machine', difficulty: 1, video: 'https://www.youtube.com/embed/wnPX6Fwe-Fg', custom: false },
     { id: '8cba099c-ddf0-41d6-bb0a-c9f8d061e407', icon: '🏋️', name: 'Cable Rear Delt Row', category: 'Pull', muscle: 'Rear Delts', equipment: 'Cable Machine', difficulty: 2, video: null, custom: false },
     { id: '74371f04-2c64-465d-a5fa-3d726519ac9c', icon: '🔙', name: 'Barbell Deadlift', category: 'Pull', muscle: 'Lower Back', equipment: 'Barbell', difficulty: 3, video: null, custom: false },
-    { id: '2835d4ee-eef5-4e58-a283-2033ecddd2fa', icon: '🔙', name: 'Conventional Deadlift', category: 'Pull', muscle: 'Posterior Chain', equipment: 'Barbell', difficulty: 3, video: null, custom: false },
+    { id: '2835d4ee-eef5-4e58-a283-2033ecddd2fa', icon: '🔙', name: 'Conventional Deadlift', category: 'Pull', muscle: 'Posterior Chain', equipment: 'Barbell', difficulty: 3, video: 'https://www.youtube.com/embed/GxsLrTzyGUU', custom: false },
     { id: '67f0d3a0-f3a4-4438-a619-5c3102105cf8', icon: '🍑', name: 'Sumo Deadlift', category: 'Pull', muscle: 'Glutes', equipment: 'Barbell', difficulty: 3, video: null, custom: false },
     { id: 'b2a43b07-cfda-492d-b7ed-ccba2122a5e5', icon: '🔙', name: 'Rack Pull', category: 'Pull', muscle: 'Lower Back', equipment: 'Barbell + Rack', difficulty: 3, video: null, custom: false },
     { id: 'f32b14b3-ad19-4153-a41d-3688fa84121f', icon: '🔙', name: 'Deficit Deadlift', category: 'Pull', muscle: 'Posterior Chain', equipment: 'Barbell', difficulty: 3, video: null, custom: false },
@@ -1876,7 +1890,7 @@ let exercises = [
     { id: 'd0638d02-684f-4fa1-9553-225ed9d58e90', icon: '💪', name: 'EZ-Bar Curl', category: 'Pull', muscle: 'Biceps', equipment: 'EZ-Bar', difficulty: 1, video: null, custom: false },
     { id: '7bdb18b0-48b9-4790-bc79-a7a25acaa92f', icon: '💪', name: 'Dumbbell Curl', category: 'Pull', muscle: 'Biceps', equipment: 'Dumbbells', difficulty: 1, video: null, custom: false },
     { id: '1720ca4d-2296-4ba7-bf4c-1e71b82ff0a8', icon: '💪', name: 'Alternating Dumbbell Curl', category: 'Pull', muscle: 'Biceps', equipment: 'Dumbbells', difficulty: 1, video: null, custom: false },
-    { id: 'e2afdab4-f68d-4aca-a742-23ead32ca8ab', icon: '💪', name: 'Hammer Curl', category: 'Pull', muscle: 'Brachialis', equipment: 'Dumbbells', difficulty: 1, video: null, custom: false },
+    { id: 'e2afdab4-f68d-4aca-a742-23ead32ca8ab', icon: '💪', name: 'Hammer Curl', category: 'Pull', muscle: 'Brachialis', equipment: 'Dumbbells', difficulty: 1, video: 'https://www.youtube.com/embed/zC3nLlEvin4', custom: false },
     { id: '18564d1b-81ee-480e-9f80-086564a550df', icon: '💪', name: 'Cross-Body Hammer Curl', category: 'Pull', muscle: 'Brachialis', equipment: 'Dumbbells', difficulty: 1, video: null, custom: false },
     { id: 'a83e7401-ce3e-46c5-9a34-cab87cc02396', icon: '💪', name: 'Incline Dumbbell Curl', category: 'Pull', muscle: 'Biceps', equipment: 'Dumbbells + Incline Bench', difficulty: 2, video: null, custom: false },
     { id: 'ef581e14-3f5a-40b6-b217-d0716f1ffabe', icon: '💪', name: 'Preacher Curl', category: 'Pull', muscle: 'Biceps', equipment: 'Preacher Bench', difficulty: 1, video: null, custom: false },
@@ -1889,7 +1903,7 @@ let exercises = [
     { id: '0492322f-dcca-4cc5-8a45-1b697c125f7d', icon: '🤲', name: 'Wrist Curl', category: 'Pull', muscle: 'Forearms', equipment: 'Dumbbells / Barbell', difficulty: 1, video: null, custom: false },
     { id: 'fe012712-4eb0-416c-b9a8-7e69c10a02a3', icon: '🤲', name: 'Reverse Wrist Curl', category: 'Pull', muscle: 'Forearms', equipment: 'Dumbbells / Barbell', difficulty: 1, video: null, custom: false },
     { id: '41ae0a96-aa2b-46f6-9cb5-9a5a3fe23577', icon: '🤲', name: 'Farmer\'s Carry', category: 'Pull', muscle: 'Forearms', equipment: 'Dumbbells / Kettlebells', difficulty: 1, video: null, custom: false },
-    { id: '36eb94ac-c65c-40ce-8847-3e30128f8c58', icon: '🦵', name: 'Barbell Back Squat', category: 'Legs', muscle: 'Quadriceps', equipment: 'Barbell + Squat Rack', difficulty: 2, video: null, custom: false },
+    { id: '36eb94ac-c65c-40ce-8847-3e30128f8c58', icon: '🦵', name: 'Barbell Back Squat', category: 'Legs', muscle: 'Quadriceps', equipment: 'Barbell + Squat Rack', difficulty: 2, video: 'https://www.youtube.com/embed/PGFvWqAQRm8', custom: false },
     { id: '9d8ab847-0213-4072-b403-fb937058445d', icon: '🦵', name: 'High-Bar Squat', category: 'Legs', muscle: 'Quadriceps', equipment: 'Barbell + Squat Rack', difficulty: 2, video: null, custom: false },
     { id: '1474236c-4c52-4b0e-bfd9-fc47d6df99fe', icon: '🍑', name: 'Low-Bar Squat', category: 'Legs', muscle: 'Glutes', equipment: 'Barbell + Squat Rack', difficulty: 3, video: null, custom: false },
     { id: 'ed811207-14fa-4736-b012-1d32a6052bab', icon: '🦵', name: 'Front Squat', category: 'Legs', muscle: 'Quadriceps', equipment: 'Barbell + Squat Rack', difficulty: 3, video: null, custom: false },
@@ -1907,7 +1921,7 @@ let exercises = [
     { id: '4766e4f9-50ae-4a94-aa4b-3a5bb8bccd8e', icon: '🦵', name: 'Step-Up', category: 'Legs', muscle: 'Quadriceps', equipment: 'Box / Bench', difficulty: 1, video: null, custom: false },
     { id: 'ab7f3a52-3c1b-4ac1-a3e8-3e0c16f61f2b', icon: '🦵', name: 'Weighted Step-Up', category: 'Legs', muscle: 'Quadriceps', equipment: 'Dumbbells + Box', difficulty: 2, video: null, custom: false },
     { id: '43e453bf-1fca-487e-b4b4-3c7084276954', icon: '🦵', name: 'Sissy Squat', category: 'Legs', muscle: 'Quadriceps', equipment: 'Bodyweight', difficulty: 3, video: null, custom: false },
-    { id: '104369ff-fb9e-4e6d-8541-b04e4cc931c0', icon: '🦵', name: 'Romanian Deadlift', category: 'Legs', muscle: 'Hamstrings', equipment: 'Barbell / Dumbbells', difficulty: 2, video: null, custom: false },
+    { id: '104369ff-fb9e-4e6d-8541-b04e4cc931c0', icon: '🦵', name: 'Romanian Deadlift', category: 'Legs', muscle: 'Hamstrings', equipment: 'Barbell / Dumbbells', difficulty: 2, video: 'https://www.youtube.com/embed/KN5vN3JskqI', custom: false },
     { id: 'acc30e39-6d46-44e7-9cf2-770a71af8b22', icon: '🦵', name: 'Stiff-Leg Deadlift', category: 'Legs', muscle: 'Hamstrings', equipment: 'Barbell / Dumbbells', difficulty: 2, video: null, custom: false },
     { id: 'bb5daf76-e595-40a0-b915-4060b608fa17', icon: '🦵', name: 'Single-Leg Romanian Deadlift', category: 'Legs', muscle: 'Hamstrings', equipment: 'Dumbbell / Kettlebell', difficulty: 2, video: null, custom: false },
     { id: 'da4e093a-828d-45f1-b15a-dc8fdb343fe7', icon: '🦵', name: 'Good Morning', category: 'Legs', muscle: 'Hamstrings', equipment: 'Barbell', difficulty: 2, video: null, custom: false },
@@ -1943,7 +1957,7 @@ let exercises = [
     { id: '252b04ee-981d-4e95-9246-e5f6c4874b1b', icon: '🧘', name: 'Hanging Knee Raise', category: 'Core', muscle: 'Lower Abs', equipment: 'Pull-Up Bar', difficulty: 1, video: null, custom: false },
     { id: '3457313f-535f-4a1b-ad35-d6b4b91cd678', icon: '🧘', name: 'Lying Leg Raise', category: 'Core', muscle: 'Lower Abs', equipment: 'Bodyweight', difficulty: 1, video: null, custom: false },
     { id: '6c3b8964-b8be-49a2-9838-620ea4adc575', icon: '🧘', name: 'Captain\'s Chair Leg Raise', category: 'Core', muscle: 'Lower Abs', equipment: 'Captain\'s Chair', difficulty: 2, video: null, custom: false },
-    { id: '7fe7286b-9d9f-4468-bc78-3cb001a4d750', icon: '🧘', name: 'Plank', category: 'Core', muscle: 'Abs', equipment: 'Bodyweight', difficulty: 1, video: null, custom: false },
+    { id: '7fe7286b-9d9f-4468-bc78-3cb001a4d750', icon: '🧘', name: 'Plank', category: 'Core', muscle: 'Abs', equipment: 'Bodyweight', difficulty: 1, video: 'https://www.youtube.com/embed/BQu26ABuVS0', custom: false },
     { id: 'a55455b7-e8d8-4b12-96b2-e8762dbac58f', icon: '🧘', name: 'Weighted Plank', category: 'Core', muscle: 'Abs', equipment: 'Weight Plate', difficulty: 2, video: null, custom: false },
     { id: 'f8b95f01-9e64-4156-b5f2-3bc08ad2ec63', icon: '🧘', name: 'Side Plank', category: 'Core', muscle: 'Obliques', equipment: 'Bodyweight', difficulty: 1, video: null, custom: false },
     { id: '09e2584f-72ca-4f97-bdb5-a5676a24aa33', icon: '🧘', name: 'Copenhagen Plank', category: 'Core', muscle: 'Obliques', equipment: 'Bench', difficulty: 3, video: null, custom: false },
@@ -2244,13 +2258,28 @@ function renderLibrary() {
     }).join('');
 }
 
+// Real videos are only attached where I've actually verified the exact
+// exercise on YouTube. For everything else, this opens a live YouTube
+// search instead of a fabricated/guessed video — always current, never
+// a fake ID pretending to be a specific verified tutorial.
+function videoOrSearchBlock(ex) {
+    if (ex.video) {
+        return `<div class="video-wrap"><iframe src="${ex.video}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+    }
+    const q = encodeURIComponent(ex.name + ' proper form tutorial');
+    return `<a class="btn" style="display:flex; align-items:center; justify-content:center; gap:8px; background:var(--bg-elevated-2); color:var(--text); border:1.5px solid var(--border); margin-bottom:16px; text-decoration:none;" href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        Search YouTube for a tutorial
+    </a>`;
+}
+
 function openExerciseDetail(id) {
     const e = exercises.find(x => x.id === id);
     if (!e) return;
     const color = CATEGORY_COLORS[e.category] || 'red';
     document.getElementById('modalTitle').textContent = `${e.icon ? e.icon + ' ' : ''}${e.name}`;
     document.getElementById('modalBody').innerHTML = `
-        ${e.video ? `<div class="video-wrap"><iframe src="${e.video}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>` : ''}
+        ${videoOrSearchBlock(e)}
         <div class="detail-tags">
             <span class="tag cat" style="--cat-color:var(--plate-${color});">${e.category}</span>
             <span class="tag">${e.muscle}</span>
@@ -2470,14 +2499,54 @@ function isRoutineInUse(id) {
     return scheduled.some(s => s.routineId === id);
 }
 
+// Deletion logic:
+//  1. Future assignments are always stripped, no matter what.
+//  2. If today's assignment exists:
+//     a. No past history at all → this routine was never really "used" —
+//        remove today's assignment too and fully delete it.
+//     b. Has past history → archive (never lose real records), but ask
+//        specifically whether today's assignment should also be removed,
+//        since that's a live, still-relevant day.
+//  3. No today assignment → archive if there's past history, otherwise a
+//     clean delete (future was already the only thing referencing it).
 function confirmDeleteRoutine(routineId) {
     const r = routines.find(x => x.id === routineId);
     if (!r) return;
 
-    if (isRoutineInUse(routineId)) {
+    const todayStr = iso(TODAY);
+    const hasPastHistory = scheduled.some(s => s.routineId === routineId && s.date < todayStr);
+    const scheduledToday = scheduled.some(s => s.routineId === routineId && s.date === todayStr);
+
+    if (scheduledToday && !hasPastHistory) {
+        openConfirmDialog(
+            'Delete Routine',
+            `Delete "${r.name}"? It has no past history, so this removes it completely — including today's assignment. This can't be undone.`,
+            'Delete',
+            () => {
+                scheduled = scheduled.filter(s => s.routineId !== routineId);
+                routines = routines.filter(x => x.id !== routineId);
+                closeModal();
+                renderRoutines();
+                renderDayView();
+                saveState();
+                showToast('Routine deleted');
+            }
+        );
+        return;
+    }
+
+    if (scheduledToday && hasPastHistory) {
+        openDeleteRoutineTodayDialog(routineId, r);
+        return;
+    }
+
+    // Not scheduled today — strip any future assignments either way.
+    scheduled = scheduled.filter(s => !(s.routineId === routineId && s.date > todayStr));
+
+    if (hasPastHistory) {
         openConfirmDialog(
             'Archive Routine',
-            `"${r.name}" has scheduled or completed days linked to it, so it can't be fully deleted without breaking your Calendar/History. This archives it instead — it disappears from My Routine and can't be scheduled again, but every existing record stays intact.`,
+            `"${r.name}" has past workout history, so it can't be fully deleted without breaking those records. This archives it instead — it disappears from My Routine, but every existing record stays intact.`,
             'Archive',
             () => {
                 r.archived = true;
@@ -2488,22 +2557,56 @@ function confirmDeleteRoutine(routineId) {
                 showToast('Routine archived');
             }
         );
-        return;
+    } else {
+        openConfirmDialog(
+            'Delete Routine',
+            `Delete "${r.name}"? This removes it from My Routine. This can't be undone.`,
+            'Delete',
+            () => {
+                routines = routines.filter(x => x.id !== routineId);
+                closeModal();
+                renderRoutines();
+                renderDayView();
+                saveState();
+                showToast('Routine deleted');
+            }
+        );
     }
+}
 
-    openConfirmDialog(
-        'Delete Routine',
-        `Delete "${r.name}"? This removes it from My Routine. This can't be undone.`,
-        'Delete',
-        () => {
-            routines = routines.filter(x => x.id !== routineId);
-            closeModal();
-            renderRoutines();
-            renderDayView();
-            saveState();
-            showToast('Routine deleted');
+// Special case: routine has real past history AND is assigned today.
+// Archiving is a given here (there's history to protect) — the open
+// question is specifically whether today's still-relevant assignment
+// should go too, so this gets its own Yes/No + checkbox popup.
+function openDeleteRoutineTodayDialog(routineId, r) {
+    document.getElementById('modalTitle').textContent = 'Archive Routine';
+    document.getElementById('modalBody').innerHTML = `
+        <p style="color:var(--text-muted); font-size:14px; line-height:1.5; margin-bottom:14px;">"${r.name}" has past workout history, so it'll be archived rather than deleted — it disappears from My Routine, but your records stay intact. It's also assigned to today.</p>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:20px; cursor:pointer; color:var(--text-muted);">
+            <input type="checkbox" id="removeTodayCheckbox">
+            Also remove today's assignment
+        </label>
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-ghost" style="flex:1;" onclick="closeModal()">Cancel</button>
+            <button class="btn" style="flex:1; background:var(--plate-red); color:#fff;" id="confirmArchiveTodayBtn">Archive</button>
+        </div>
+    `;
+    document.getElementById('confirmArchiveTodayBtn').onclick = () => {
+        const removeToday = document.getElementById('removeTodayCheckbox').checked;
+        const todayStr = iso(TODAY);
+        scheduled = scheduled.filter(s => !(s.routineId === routineId && s.date > todayStr)); // future, always
+        if (removeToday) {
+            scheduled = scheduled.filter(s => !(s.routineId === routineId && s.date === todayStr));
+            delete daySessions[sessionKey(todayStr, routineId)];
         }
-    );
+        r.archived = true;
+        closeModal();
+        renderRoutines();
+        renderDayView();
+        saveState();
+        showToast(removeToday ? "Routine archived and removed from today" : 'Routine archived');
+    };
+    openModal(true);
 }
 
 let builderState = null; // { id|null, name, exercises:[{exId,sets,reps,weight,rest}] }
@@ -2534,14 +2637,15 @@ function openRoutineBuilder(title) {
         </div>
         <div class="filter-chips" id="builderCategoryChips" style="margin-top:10px;"></div>
         <div class="add-exercise-search" id="builderAddSearch"></div>
-        <div style="height:14px;"></div>
-        <button class="btn btn-primary" onclick="saveRoutine()">Save Routine</button>
     `;
     renderBuilderExList();
     builderActiveCategory = 'All';
     renderBuilderCategoryChips();
     renderBuilderAddSearch();
     openModal(true);
+    const checkBtn = document.getElementById('modalCheckBtn');
+    checkBtn.style.display = 'flex';
+    checkBtn.onclick = saveRoutine;
 }
 
 function renderBuilderExList() {
@@ -2555,7 +2659,7 @@ function renderBuilderExList() {
         return `
         <div class="builder-ex-row">
             <div class="builder-ex-top">
-                <span class="builder-ex-name">${ex ? ex.name : 'Unknown exercise'}</span>
+                <span class="builder-ex-name">${ex ? `${ex.icon ? ex.icon + ' ' : ''}${ex.name}` : 'Unknown exercise'}</span>
                 <div class="builder-ex-controls">
                     <button class="mini-btn" onclick="moveBuilderEx(${i},-1)" ${i === 0 ? 'disabled' : ''}>↑</button>
                     <button class="mini-btn" onclick="moveBuilderEx(${i},1)" ${i === builderState.exercises.length - 1 ? 'disabled' : ''}>↓</button>
@@ -2621,7 +2725,7 @@ function renderBuilderAddSearch() {
     box.innerHTML = matches.length === 0
         ? `<div class="add-exercise-row" style="cursor:default;"><span style="color:var(--text-faint);">No exercises match.</span></div>`
         : matches.map(e =>
-            `<div class="add-exercise-row" onclick="addBuilderEx('${e.id}')"><span>${e.name}</span><span class="add-plus">+</span></div>`
+            `<div class="add-exercise-row" onclick="addBuilderEx('${e.id}')"><span>${e.icon ? e.icon + ' ' : ''}${e.name}</span><span class="add-plus">+</span></div>`
         ).join('');
 }
 
@@ -2636,17 +2740,49 @@ function saveRoutine() {
     if (!name) { showToast('Name your routine first'); return; }
     if (builderState.exercises.length === 0) { showToast('Add at least one exercise'); return; }
     builderState.name = name;
-    if (builderState.id) {
+    const isEdit = !!builderState.id;
+    if (isEdit) {
         const idx = routines.findIndex(r => r.id === builderState.id);
         routines[idx] = builderState;
+        applyRoutineUpdateToAssignedDays(builderState.id);
     } else {
         builderState.id = 'r' + Date.now();
         routines.push(builderState);
     }
     closeModal();
     renderRoutines();
+    renderDayView();
     saveState();
     showToast('Routine saved');
+}
+
+// Edits apply to today's and every future assignment immediately —
+// regardless of any progress already logged today. Existing progress
+// (sets done, current phase) is preserved per exercise; only the
+// targets refresh, and the exercise list itself is resynced to match
+// whatever the routine now contains (added/removed/reordered).
+function applyRoutineUpdateToAssignedDays(routineId) {
+    const r = routines.find(x => x.id === routineId);
+    if (!r) return;
+    const todayStr = iso(TODAY);
+    Object.keys(daySessions).forEach(key => {
+        const session = daySessions[key];
+        if (session.routineId !== routineId) return;
+        const dateStr = key.slice(0, key.indexOf('::'));
+        if (dateStr < todayStr) return; // never touch a day that's already passed
+
+        const oldByExId = {};
+        session.log.forEach(exLog => { oldByExId[exLog.exId] = exLog; });
+        session.log = r.exercises.map(x => {
+            const old = oldByExId[x.exId];
+            return {
+                exId: x.exId, targetSets: x.sets, rest: x.rest, weight: x.weight, reps: x.reps,
+                current: old ? old.current : 0,
+                loggedSets: old ? old.loggedSets : [],
+                phase: old ? old.phase : 'ready'
+            };
+        });
+    });
 }
 
 let scheduleModalRoutineId = null;
@@ -2994,11 +3130,11 @@ function renderInlineWorkout(dateStr, routineId) {
             return `
             <div class="session-ex-card ${isComplete ? 'completed' : ''} ${stateClass}" onclick="openDayExercisePopup('${dateStr}', '${routineId}', ${i})">
                 <div class="session-ex-row">
-                    <span class="exercise-name">${ex ? ex.name : 'Exercise'}</span>
+                    <span class="exercise-name">${ex && ex.icon ? ex.icon + ' ' : ''}${ex ? ex.name : 'Exercise'}</span>
                     ${badge}
                 </div>
                 <div class="exercise-meta-row">
-                    <span class="exercise-meta">Target: ${exLog.targetSets} × ${exLog.reps} @ ${exLog.weight} kg · Rest ${exLog.rest}s · ${isComplete ? '✓ Done' : getSetStatusText(exLog)}</span>
+                    <span class="exercise-meta">Target: ${exLog.targetSets} × ${exLog.reps} @ ${exLog.weight} kg · Rest ${exLog.rest}s · ${getSetStatusText(exLog)}${isComplete ? ' · ✓ Done' : ''}</span>
                 </div>
             </div>`;
         }).join('')}
@@ -3036,13 +3172,18 @@ function openDayExercisePopup(dateStr, routineId, exIdx) {
             routineId = activeTimerContext.routineId;
             exIdx = activeTimerContext.exIdx;
         } else if (activeExLog && activeExLog.phase === 'resting' && !isSameExercise) {
-            if (!suppressSwitchWarning) {
+            const activeIsComplete = activeExLog.current >= activeExLog.targetSets;
+            if (activeIsComplete) {
+                // Its work is done — just resting afterward — so switching
+                // away needs no confirmation and no notice at all.
+            } else if (!suppressSwitchWarning) {
                 const activeEx = exercises.find(e => e.id === activeExLog.exId);
                 confirmSwitchWorkout(dateStr, routineId, exIdx, activeEx ? activeEx.name : 'Your last exercise');
                 return; // wait for the person's Yes/No
+            } else {
+                const activeEx = exercises.find(e => e.id === activeExLog.exId);
+                showTopToast(`Switched workouts — ${activeEx ? activeEx.name : 'your last exercise'} is still resting`);
             }
-            const activeEx = exercises.find(e => e.id === activeExLog.exId);
-            showTopToast(`Switched workouts — ${activeEx ? activeEx.name : 'your last exercise'} is still resting`);
         }
     }
     openDayExercisePopupDirect(dateStr, routineId, exIdx);
@@ -3097,9 +3238,9 @@ function renderDayExercisePopup(dateStr, routineId, exIdx) {
     const startDisabled = exLog.phase === 'inProgress';
     const restDisabled = exLog.phase === 'ready';
 
-    document.getElementById('modalTitle').textContent = ex ? ex.name : 'Exercise';
+    document.getElementById('modalTitle').textContent = ex ? `${ex.icon ? ex.icon + ' ' : ''}${ex.name}` : 'Exercise';
     popupBody.innerHTML = `
-        ${ex && ex.video ? `<div class="video-wrap"><iframe src="${ex.video}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>` : ''}
+        ${ex ? videoOrSearchBlock(ex) : ''}
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:20px;">
             <p class="exercise-meta" style="margin:0;">Target: ${exLog.targetSets} × ${exLog.reps} @ ${exLog.weight} kg · Rest ${exLog.rest}s · ${getSetStatusText(exLog)}</p>
             ${exLog.current > 0 ? `<button class="mini-btn" onclick="handleResetCounterClick('${dateStr}', '${routineId}', ${exIdx})" aria-label="Reset set counter">↺</button>` : ''}
@@ -3117,7 +3258,21 @@ function renderDayExercisePopup(dateStr, routineId, exIdx) {
 // remainder of the rest and jumps straight into the next set's stopwatch.
 // Resets this exercise's set count back to zero — stopping its timer
 // first if it's the one currently active, so nothing's left dangling.
+// Progressing a workout (Start/Rest/Complete/reset) is only allowed on
+// its actual scheduled day. Buttons stay enabled either way (not
+// disabled/greyed) — tapping them on the wrong day just explains why
+// nothing happened, via a toast rather than a blocking dialog.
+function guardTodayOnly(dateStr) {
+    const todayStr = iso(TODAY);
+    if (dateStr === todayStr) return true;
+    showToast(dateStr > todayStr
+        ? "This workout is scheduled for later — you can log it on its actual day."
+        : "This workout's day has passed — it can no longer be logged.");
+    return false;
+}
+
 function handleResetCounterClick(dateStr, routineId, exIdx) {
+    if (!guardTodayOnly(dateStr)) return;
     const session = daySessions[sessionKey(dateStr, routineId)];
     if (!session) return;
     const exLog = session.log[exIdx];
@@ -3141,6 +3296,7 @@ function handleResetCounterClick(dateStr, routineId, exIdx) {
 }
 
 function handleStartClick(dateStr, routineId, exIdx) {
+    if (!guardTodayOnly(dateStr)) return;
     const session = daySessions[sessionKey(dateStr, routineId)];
     if (!session) return;
     const exLog = session.log[exIdx];
@@ -3154,7 +3310,18 @@ function handleStartClick(dateStr, routineId, exIdx) {
         activeTimerContext.routineId === routineId &&
         activeTimerContext.exIdx === exIdx
     );
-    if (exLog.phase === 'resting' || isDifferentExerciseActive) resetTimer();
+    if (exLog.phase === 'resting' || isDifferentExerciseActive) {
+        // Capture how long the rest actually ran before it gets cut short,
+        // and attach it to the set it followed.
+        const restingExLog = isDifferentExerciseActive
+            ? daySessions[sessionKey(activeTimerContext.dateStr, activeTimerContext.routineId)]?.log[activeTimerContext.exIdx]
+            : exLog;
+        if (restingExLog && restingExLog.phase === 'resting') {
+            const lastSet = restingExLog.loggedSets[restingExLog.loggedSets.length - 1];
+            if (lastSet && timeLeft !== undefined) lastSet.restSeconds = timeLeft;
+        }
+        resetTimer();
+    }
 
     exLog.phase = 'inProgress';
     activeTimerContext = { dateStr, routineId, exIdx };
@@ -3169,11 +3336,15 @@ function handleStartClick(dateStr, routineId, exIdx) {
 // countdown instead (button relabels to "Stop"). Once resting, tapping it
 // again ("Stop") ends the rest early and goes back to ready.
 function handleRestClick(dateStr, routineId, exIdx) {
+    if (!guardTodayOnly(dateStr)) return;
     const session = daySessions[sessionKey(dateStr, routineId)];
     if (!session) return;
     const exLog = session.log[exIdx];
 
     if (exLog.phase === 'inProgress') {
+        // Capture how long the set itself took (the "In Progress" stopwatch)
+        // before it gets torn down by the switch to resting.
+        const performedSeconds = stopwatchStartedAt ? Math.max(0, Math.round((Date.now() - stopwatchStartedAt) / 1000)) : undefined;
         const maxAllowed = exLog.targetSets * 2;
         exLog.current++;
         if (exLog.current > maxAllowed) {
@@ -3182,7 +3353,7 @@ function handleRestClick(dateStr, routineId, exIdx) {
             exLog.current = 0;
             exLog.loggedSets = [];
         }
-        exLog.loggedSets.push({ weight: exLog.weight, reps: exLog.reps });
+        exLog.loggedSets.push({ weight: exLog.weight, reps: exLog.reps, performedSeconds });
         exLog.phase = 'resting';
         activeTimerContext = { dateStr, routineId, exIdx };
         quickStartRest(exLog.rest || 60);
@@ -3191,8 +3362,11 @@ function handleRestClick(dateStr, routineId, exIdx) {
             // "Rest Again" tapped — restart the same rest duration
             quickStartRest(exLog.rest || 60);
         } else {
-            // "Stop" tapped while resting — end the rest early, and close
-            // the popup so the person can freely pick another workout.
+            // "Stop" tapped while resting — capture the actual rest taken,
+            // end it early, and close the popup so the person can freely
+            // pick another workout.
+            const lastSet = exLog.loggedSets[exLog.loggedSets.length - 1];
+            if (lastSet && timeLeft !== undefined) lastSet.restSeconds = timeLeft;
             resetTimer();
             closeModal();
             return;
@@ -3217,7 +3391,7 @@ function finishDayWorkout(dateStr, routineId, notes) {
         .map(exLog => {
             const ex = exercises.find(e => e.id === exLog.exId);
             exLog.loggedSets.forEach(s => { volume += (s.weight || 0) * (s.reps || 0); });
-            return { exId: exLog.exId, name: ex ? ex.name : 'Exercise', sets: exLog.loggedSets.map(s => ({ weight: s.weight, reps: s.reps })) };
+            return { exId: exLog.exId, name: ex ? ex.name : 'Exercise', sets: exLog.loggedSets.map(s => ({ weight: s.weight, reps: s.reps, performedSeconds: s.performedSeconds, restSeconds: s.restSeconds })) };
         });
 
     const histId = 'h' + Date.now();
@@ -3291,22 +3465,37 @@ function confirmRemoveDayWorkout(dateStr, routineId) {
 function renderCompletedDayCard(s) {
     const r = routines.find(x => x.id === s.routineId);
     const h = s.historyId ? workoutHistory.find(x => x.id === s.historyId) : null;
+
+    if (!h) {
+        return `
+        <div class="session-header-bar" style="margin:0 0 16px;">
+            <span class="modal-title">${r ? r.name : 'Routine'}</span>
+            <span class="tag" style="color:var(--plate-green); background:var(--plate-green-dim);">Completed</span>
+        </div>`;
+    }
+
     return `
-    <div class="routine-card">
-        <div class="routine-card-top">
-            <span class="routine-name">${r ? r.name : 'Routine'}</span>
+        <div class="session-header-bar" style="margin:0 0 16px;">
+            <span class="modal-title">${r ? r.name : h.routineName}</span>
             <span class="tag" style="color:var(--plate-green); background:var(--plate-green-dim);">Completed</span>
         </div>
-        ${h ? `
-            <div class="routine-meta">${h.durationMin} min · ${h.volume.toLocaleString()} kg volume</div>
-            ${h.exercises.map(ex => `
-                <div class="builder-ex-row">
-                    <div class="builder-ex-name" style="margin-bottom:8px;">${ex.name}</div>
-                    ${ex.sets.map((set, i) => `<div class="set-row"><span class="set-num">${i + 1}</span><span style="text-align:center; font-size:13px;">${set.weight} kg</span><span style="text-align:center; font-size:13px;">${set.reps} reps</span><span style="text-align:center; color:var(--plate-green);">✓</span></div>`).join('')}
+        <p style="color:var(--text-muted); font-size:12.5px; margin:-8px 0 14px;">${formatDuration(h.durationMin)} · ${h.volume.toLocaleString()} kg volume</p>
+        ${h.exercises.map(ex => {
+            const liveEx = ex.exId ? exercises.find(e => e.id === ex.exId) : null;
+            const icon = liveEx && liveEx.icon ? liveEx.icon + ' ' : '';
+            const setCount = ex.sets.length;
+            const lastSet = ex.sets[setCount - 1] || { weight: 0, reps: 0 };
+            return `
+            <div class="session-ex-card completed" onclick="openHistoryDetail('${h.id}')">
+                <div class="session-ex-row">
+                    <span class="exercise-name">${icon}${ex.name}</span>
                 </div>
-            `).join('')}
-        ` : ''}
-    </div>`;
+                <div class="exercise-meta-row">
+                    <span class="exercise-meta">${setCount} set${setCount === 1 ? '' : 's'} · ${lastSet.weight} kg × ${lastSet.reps} reps · Set ${setCount} of ${setCount} · ✓ Done</span>
+                </div>
+            </div>`;
+        }).join('')}
+    `;
 }
 
 function renderMissedDayCard(s) {
@@ -3340,7 +3529,7 @@ function renderHistory() {
                 <span class="history-date">${dateLabel}</span>
             </div>
             <div class="history-stats">
-                <span><b>${h.durationMin}</b> min</span>
+                <span><b>${formatDuration(h.durationMin)}</b></span>
                 <span><b>${h.volume.toLocaleString()}</b> kg volume</span>
                 <span><b>${h.exercises.length}</b> exercises</span>
             </div>
@@ -3348,28 +3537,52 @@ function renderHistory() {
     }).join('');
 }
 
+// Formats total minutes as "1 hr 15 min" (or just "45 min" under an hour).
+function formatDuration(totalMinutes) {
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    if (h === 0) return `${m} min`;
+    if (m === 0) return `${h} hr`;
+    return `${h} hr ${m} min`;
+}
+
+function formatRestSeconds(seconds) {
+    if (seconds === undefined || seconds === null) return '—';
+    if (seconds < 60) return `${seconds}s`;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return s === 0 ? `${m}m` : `${m}m ${s}s`;
+}
+
 function openHistoryDetail(id) {
     const h = workoutHistory.find(x => x.id === id);
+    if (!h) return; // defensive — a missing/stale id should never crash the popup open
     const dateLabel = new Date(h.date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     document.getElementById('modalTitle').textContent = h.routineName;
     document.getElementById('modalBody').innerHTML = `
-        <p style="color:var(--text-muted); font-size:13px; margin-bottom:14px;">${dateLabel} · ${h.durationMin} min · ${h.volume.toLocaleString()} kg total volume</p>
-        ${h.exercises.map(ex => `
+        <p style="color:var(--text-muted); font-size:13px; margin-bottom:14px;">${dateLabel} · ${formatDuration(h.durationMin)} · ${h.volume.toLocaleString()} kg total volume</p>
+        ${h.exercises.map(ex => {
+            const liveEx = ex.exId ? exercises.find(e => e.id === ex.exId) : null;
+            const icon = liveEx && liveEx.icon ? liveEx.icon + ' ' : '';
+            return `
             <div class="builder-ex-row">
-                <div class="builder-ex-name" style="margin-bottom:8px;">${ex.name}</div>
-                <div class="set-table-header"><span>Set</span><span>Weight</span><span>Reps</span><span></span></div>
+                <div class="builder-ex-name" style="margin-bottom:8px;">${icon}${ex.name}</div>
+                <div class="set-table-header"><span>Set</span><span>Weight</span><span>Reps</span><span>Time</span><span>Rest</span><span></span></div>
                 ${ex.sets.map((s, i) => `
                     <div class="set-row">
                         <span class="set-num">${i + 1}</span>
                         <span style="text-align:center; font-size:13px;">${s.weight} kg</span>
                         <span style="text-align:center; font-size:13px;">${s.reps}</span>
+                        <span style="text-align:center; font-size:12px; color:var(--text-muted);">${formatRestSeconds(s.performedSeconds)}</span>
+                        <span style="text-align:center; font-size:12px; color:var(--text-muted);">${formatRestSeconds(s.restSeconds)}</span>
                         <span style="text-align:center; color:var(--plate-green);">✓</span>
                     </div>`).join('')}
             </div>
-        `).join('')}
+            `;
+        }).join('')}
         ${h.notes ? `<div class="field-group"><label class="field-label">Notes</label><p style="font-size:13.5px; color:var(--text-muted);">${h.notes}</p></div>` : ''}
     `;
-    openModal();
+    openModal(true);
 }
 
 /* =========================================================
@@ -3590,6 +3803,12 @@ function openModal(centered) {
     const alreadyOpen = overlay.classList.contains('open');
     overlay.classList.toggle('centered', !!centered);
     overlay.classList.add('open');
+    // Reset the header checkmark by default — only whichever caller needs
+    // it (currently just the routine builder) turns it back on, right
+    // after this call.
+    const checkBtn = document.getElementById('modalCheckBtn');
+    checkBtn.style.display = 'none';
+    checkBtn.onclick = null;
     if (!alreadyOpen) pushNav('modal'); // swapping content in an already-open modal doesn't need a new entry
 }
 
@@ -3662,9 +3881,9 @@ function showTopToast(msg) {
    background.)
    ========================================================= */
 let countdown;
-let timeLeft;
+let timeLeft; // while resting, this is now ELAPSED seconds (counts up), not remaining
 let totalDuration = 90;
-let endTime = null;
+let restStartTime = null; // when the current rest began (elapsed = now - this)
 let isRunning = false;
 let alarmInterval;
 let audioCtx = null;
@@ -3829,6 +4048,18 @@ function updateDisplay(secondsLeft) {
     updateRing(secondsLeft);
 }
 
+// Rest display counts UP from 0 (not down) — the number shown is elapsed
+// time, while the ring still depletes toward the target for a familiar
+// "time's nearly up" visual, then simply stays empty once the target is
+// passed (the count keeps climbing past it until the person stops it).
+function updateRestDisplay(elapsedSeconds) {
+    const minutes = Math.floor(elapsedSeconds / 60);
+    const remainderSeconds = elapsedSeconds % 60;
+    fabTime.textContent = `${minutes < 10 ? '0' : ''}${minutes}:${remainderSeconds < 10 ? '0' : ''}${remainderSeconds}`;
+    const remaining = Math.max(0, totalDuration - elapsedSeconds);
+    updateRing(remaining);
+}
+
 async function requestWakeLock() {
     try {
         if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
@@ -3885,14 +4116,15 @@ function updateStopwatchTime(secondsElapsed) {
 }
 
 function tick() {
-    const remainingMs = endTime - Date.now();
-    const remaining = Math.max(0, Math.round(remainingMs / 1000));
-    if (remaining !== timeLeft) { timeLeft = remaining; updateDisplay(timeLeft); }
-    if (remainingMs <= 0) {
-        clearInterval(countdown);
-        isRunning = false;
-        startBtn.style.display = 'inline-block';
-        pauseBtn.style.display = 'none';
+    const elapsed = Math.max(0, Math.round((Date.now() - restStartTime) / 1000));
+    if (elapsed !== timeLeft) {
+        timeLeft = elapsed;
+        updateRestDisplay(elapsed);
+    }
+    // Alarm fires once, right when the target is reached — but the count
+    // keeps climbing and the interval keeps running until the person taps
+    // Stop; this is what makes it "continue counting until they stop it".
+    if (elapsed >= totalDuration && !timerFab.classList.contains('alarm')) {
         triggerAlarm();
     }
 }
@@ -3902,19 +4134,21 @@ function startTimer() {
 
     unlockAudio();
     requestWakeLock();
-    stopwatchMode = false; // starting a real countdown always supersedes stopwatch mode
+    stopwatchMode = false; // starting a real rest timer always supersedes stopwatch mode
 
     if (timeLeft === undefined) {
+        // Fresh start (not resuming from a pause) — elapsed begins at 0,
+        // and totalDuration is the target the alarm fires at.
         const minutes = parseInt(minInput.value) || 0;
         const seconds = parseInt(secInput.value) || 0;
-        timeLeft = (minutes * 60) + seconds;
-        totalDuration = timeLeft;
+        totalDuration = (minutes * 60) + seconds;
+        timeLeft = 0;
     }
 
-    if (timeLeft <= 0) return;
+    if (totalDuration <= 0) return;
 
-    endTime = Date.now() + timeLeft * 1000;
-    scheduleNotification(timeLeft);
+    restStartTime = Date.now() - timeLeft * 1000; // resumes correctly if timeLeft>0 from a pause
+    scheduleNotification(Math.max(0, totalDuration - timeLeft));
 
     isRunning = true;
     startBtn.style.display = 'none';
@@ -3932,7 +4166,7 @@ function startTimer() {
 }
 
 function pauseTimer() {
-    if (isRunning) timeLeft = Math.max(0, Math.round((endTime - Date.now()) / 1000));
+    if (isRunning) timeLeft = Math.max(0, Math.round((Date.now() - restStartTime) / 1000));
     clearInterval(countdown);
     clearTimeout(notifyTimeout);
     isRunning = false;
@@ -3950,7 +4184,7 @@ function resetTimer() {
     clearTimeout(notifyTimeout);
     isRunning = false;
     timeLeft = undefined;
-    endTime = null;
+    restStartTime = null;
     stopwatchMode = false;
     stopwatchStartedAt = null;
 
@@ -3991,13 +4225,13 @@ function quickStartRest(totalSeconds) {
     clearTimeout(notifyTimeout);
     minInput.value = Math.floor(totalSeconds / 60);
     secInput.value = totalSeconds % 60;
-    timeLeft = totalSeconds;
+    timeLeft = 0; // elapsed starts at 0 — counts UP toward totalSeconds, then keeps going
     totalDuration = totalSeconds;
     isRunning = false;
     timerFab.classList.remove('alarm');
     startBtn.style.display = 'inline-block';
     pauseBtn.style.display = 'none';
-    updateDisplay(totalSeconds);
+    updateRestDisplay(0);
     startTimer();
 }
 
