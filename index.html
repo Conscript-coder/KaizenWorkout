@@ -4789,11 +4789,11 @@ function renderAuthModal() {
         <div id="authErrorBox" class="auth-error-box" style="display:none;"></div>
         <div class="field-group">
             <label class="field-label">Email</label>
-            <input class="field-input" id="authEmail" type="email" placeholder="you@example.com" autocomplete="email">
+            <input class="field-input" id="authEmail" type="email" placeholder="you@example.com" autocomplete="email" onkeydown="if(event.key==='Enter') document.getElementById('authSubmitBtn').click()">
         </div>
         <div class="field-group">
             <label class="field-label">Password</label>
-            <input class="field-input" id="authPassword" type="password" placeholder="${authMode === 'signup' ? 'At least 6 characters' : 'Your password'}" autocomplete="${authMode === 'signup' ? 'new-password' : 'current-password'}">
+            <input class="field-input" id="authPassword" type="password" placeholder="${authMode === 'signup' ? 'At least 6 characters' : 'Your password'}" autocomplete="${authMode === 'signup' ? 'new-password' : 'current-password'}" onkeydown="if(event.key==='Enter') document.getElementById('authSubmitBtn').click()">
         </div>
         <button class="btn btn-primary" style="width:100%;" id="authSubmitBtn" onclick="${authMode === 'signup' ? 'handleEmailSignup()' : 'handleEmailLogin()'}">${authMode === 'signup' ? 'Create Account' : 'Log In'}</button>
         <div style="display:flex; align-items:center; gap:10px; margin:14px 0;">
