@@ -4799,6 +4799,8 @@ async function handleEmailSignup() {
             closeAuthModal();
             showToast('Account created — check your email to verify before logging in.');
         } else if (data && data.session) {
+            currentAuthUser = data.session.user;
+            refreshAuthUI();
             closeAuthModal();
             showToast('Account created and logged in');
         }
@@ -4819,6 +4821,8 @@ async function handleEmailLogin() {
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) { showToast(describeAuthError(error)); return; }
         if (data && data.session) {
+            currentAuthUser = data.session.user;
+            refreshAuthUI();
             closeAuthModal();
             showToast('Logged in');
         }
@@ -4851,8 +4855,13 @@ async function handleLogout() {
     try {
         const { error } = await supabaseClient.auth.signOut();
         if (error) { showToast(describeAuthError(error)); return; }
+        // Update the UI directly rather than relying solely on
+        // onAuthStateChange to fire — guarantees the front page reappears
+        // immediately regardless of listener timing.
         // Deliberately does nothing to localStorage/'kaizen-data' — workout
         // data is untouched by logging out.
+        currentAuthUser = null;
+        refreshAuthUI();
         showToast('Logged out');
     } catch (e) {
         showToast(describeAuthError(e));
