@@ -163,6 +163,18 @@
         line-height: 1.5;
     }
 
+    .auth-error-box {
+        background: var(--plate-red-dim);
+        border: 1px solid rgba(220, 74, 63, 0.3);
+        color: var(--plate-red);
+        font-size: 12.5px;
+        font-weight: 600;
+        line-height: 1.4;
+        padding: 10px 12px;
+        border-radius: var(--radius);
+        margin-bottom: 14px;
+    }
+
     /* ===== Top bar ===== */
     .topbar {
         position: sticky;
@@ -4756,9 +4768,25 @@ function switchAuthMode(mode) {
     renderAuthModal();
 }
 
+// Shows an auth error inline inside the popup (above the email field)
+// instead of as a toast, since the person is already looking right at
+// this form when something goes wrong.
+function showAuthError(msg) {
+    const box = document.getElementById('authErrorBox');
+    if (!box) { showToast(msg); return; } // modal isn't open — fall back to a toast
+    box.textContent = msg;
+    box.style.display = 'block';
+}
+
+function clearAuthError() {
+    const box = document.getElementById('authErrorBox');
+    if (box) box.style.display = 'none';
+}
+
 function renderAuthModal() {
     document.getElementById('authModalTitle').textContent = authMode === 'signup' ? 'Sign Up' : 'Log In';
     document.getElementById('authModalBody').innerHTML = `
+        <div id="authErrorBox" class="auth-error-box" style="display:none;"></div>
         <div class="field-group">
             <label class="field-label">Email</label>
             <input class="field-input" id="authEmail" type="email" placeholder="you@example.com" autocomplete="email">
@@ -4785,14 +4813,15 @@ function renderAuthModal() {
 }
 
 async function handleEmailSignup() {
+    clearAuthError();
     const email = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPassword').value;
-    if (!email || !password) { showToast('Enter an email and password first'); return; }
+    if (!email || !password) { showAuthError('Enter an email and password first'); return; }
     const btn = document.getElementById('authSubmitBtn');
     btn.disabled = true; btn.textContent = 'Creating account…';
     try {
         const { data, error } = await supabaseClient.auth.signUp({ email, password });
-        if (error) { showToast(describeAuthError(error)); return; }
+        if (error) { showAuthError(describeAuthError(error)); return; }
         if (data && data.user && !data.session) {
             // Email confirmation required — Supabase does not consider this
             // user authenticated yet, and neither do we.
@@ -4805,21 +4834,22 @@ async function handleEmailSignup() {
             showToast('Account created and logged in');
         }
     } catch (e) {
-        showToast(describeAuthError(e));
+        showAuthError(describeAuthError(e));
     } finally {
         btn.disabled = false; btn.textContent = 'Create Account';
     }
 }
 
 async function handleEmailLogin() {
+    clearAuthError();
     const email = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPassword').value;
-    if (!email || !password) { showToast('Enter your email and password'); return; }
+    if (!email || !password) { showAuthError('Enter your email and password'); return; }
     const btn = document.getElementById('authSubmitBtn');
     btn.disabled = true; btn.textContent = 'Logging in…';
     try {
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-        if (error) { showToast(describeAuthError(error)); return; }
+        if (error) { showAuthError(describeAuthError(error)); return; }
         if (data && data.session) {
             currentAuthUser = data.session.user;
             refreshAuthUI();
@@ -4827,13 +4857,14 @@ async function handleEmailLogin() {
             showToast('Logged in');
         }
     } catch (e) {
-        showToast(describeAuthError(e));
+        showAuthError(describeAuthError(e));
     } finally {
         btn.disabled = false; btn.textContent = 'Log In';
     }
 }
 
 async function handleGoogleLogin() {
+    clearAuthError();
     try {
         const { error } = await supabaseClient.auth.signInWithOAuth({
             provider: 'google',
@@ -4844,9 +4875,9 @@ async function handleGoogleLogin() {
         // itself failed to start (e.g. provider misconfigured), not that
         // the user cancelled the Google popup (that happens after redirect
         // and comes back as no session, handled by onAuthStateChange).
-        if (error) showToast(describeAuthError(error));
+        if (error) showAuthError(describeAuthError(error));
     } catch (e) {
-        showToast(describeAuthError(e));
+        showAuthError(describeAuthError(e));
     }
 }
 
