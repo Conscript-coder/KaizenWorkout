@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#14161a">
 <title>Kaizen Workout Tracker</title>
+<!-- Supabase JS client — only the public anon key is ever used here, see AUTH CONFIG below -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -115,6 +117,50 @@
         position: relative;
         display: flex;
         flex-direction: column;
+    }
+
+    /* Auth gate — body starts with class="gated" so the app is hidden
+       until initAuth() confirms a real session; #authOverlay (the login
+       modal) lives outside .app so it's never affected by this. */
+    body.gated .app { display: none; }
+
+    #authGate {
+        display: none;
+        min-height: 100vh;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+    }
+    body.gated #authGate { display: flex; }
+
+    .auth-gate-inner {
+        width: 100%;
+        max-width: 340px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .auth-gate-brand {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 34px;
+        letter-spacing: 0.3px;
+        margin-bottom: 10px;
+    }
+
+    .auth-gate-tagline {
+        color: var(--text-muted);
+        font-size: 14px;
+        line-height: 1.5;
+        margin-bottom: 28px;
+    }
+
+    .auth-gate-note {
+        color: var(--text-faint);
+        font-size: 12px;
+        margin-top: 16px;
+        line-height: 1.5;
     }
 
     /* ===== Top bar ===== */
@@ -1343,23 +1389,6 @@
         box-shadow: inset 0 0 0 1px var(--plate-blue);
     }
 
-    /* Day view */
-    .day-entry-wrap { margin-bottom: 4px; }
-    .day-entry-reorder {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 6px;
-    }
-    .day-entry-reorder-label {
-        font-size: 10.5px;
-        font-weight: 700;
-        color: var(--text-faint);
-        text-transform: uppercase;
-        letter-spacing: 0.4px;
-        margin-right: 2px;
-    }
-
     .day-view-nav {
         display: flex;
         align-items: center;
@@ -1589,7 +1618,7 @@
     button, .chip, .cal-day, .nav-btn, .preset-btn { touch-action: manipulation; }
 </style>
 </head>
-<body>
+<body class="gated">
 
 <div class="app">
 
@@ -1720,6 +1749,22 @@
 
 </div>
 
+<!-- ===== Front page / auth gate — shown instead of the app until the
+     person is logged in. Sits outside .app so it's never affected by
+     hiding .app, and the login modal (#authOverlay, also outside .app)
+     stays reachable from here. ===== -->
+<div id="authGate">
+    <div class="auth-gate-inner">
+        <div class="auth-gate-brand">
+            <span class="brand-accent">Kaizen</span> Workout Tracker
+        </div>
+        <p class="auth-gate-tagline">Build once, train every day. Log in or create an account to get started.</p>
+        <button class="btn btn-primary" style="width:100%; max-width:320px;" onclick="openAuthModal('login')">Log In</button>
+        <button class="btn" style="width:100%; max-width:320px; background:var(--bg-elevated-2); color:var(--text); border:1.5px solid var(--border); margin-top:10px;" onclick="openAuthModal('signup')">Sign Up</button>
+        <p class="auth-gate-note" id="authGateNote" style="display:none;">Sign-in isn't configured yet — add your Supabase URL and key in the code to enable this.</p>
+    </div>
+</div>
+
 <!-- ===== Account & Settings slide-over panel ===== -->
 <div class="slide-panel" id="accountPanel">
     <div class="slide-panel-header">
@@ -1729,16 +1774,29 @@
         <span class="slide-panel-title">Account & Settings</span>
     </div>
     <div class="slide-panel-body">
-        <div class="account-profile-card">
-            <div class="account-avatar">JD</div>
-            <div>
-                <div class="account-name">Jordan Diaz</div>
-                <div class="account-email">jordan.diaz@email.com</div>
+        <div id="authLoggedOutView">
+            <div class="account-profile-card" style="flex-direction:column; align-items:flex-start; gap:10px;">
+                <div class="account-name" style="font-size:16px;">You're not signed in</div>
+                <p style="font-size:12.5px; color:var(--text-muted); margin:0;">Sign in to keep your account info in sync. Your routines, history and progress on this device work the same either way — nothing here is required to use the app.</p>
+                <div style="display:flex; gap:10px; width:100%; margin-top:4px;">
+                    <button class="btn btn-primary" style="flex:1;" onclick="openAuthModal('login')">Log In</button>
+                    <button class="btn" style="flex:1; background:var(--bg-elevated-2); color:var(--text); border:1.5px solid var(--border);" onclick="openAuthModal('signup')">Sign Up</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="authLoggedInView" style="display:none;">
+            <div class="account-profile-card">
+                <div class="account-avatar" id="authAvatarInitials">?</div>
+                <div>
+                    <div class="account-name" id="authUserName">—</div>
+                    <div class="account-email" id="authUserEmail">—</div>
+                </div>
             </div>
         </div>
 
         <div class="account-streak-card">
-            <div class="account-streak-num">🔥 6</div>
+            <div class="account-streak-num">🔥 <span id="streakAccountPanel">0</span></div>
             <div class="account-streak-label">Day Streak — keep it going!</div>
         </div>
 
@@ -1780,13 +1838,15 @@
         </div>
 
         <div class="settings-section-label">Account</div>
-        <div class="settings-row settings-row-link">
-            <span>Edit profile</span>
-            <span class="settings-chevron">›</span>
-        </div>
-        <div class="settings-row settings-row-link">
-            <span>Change password</span>
-            <span class="settings-chevron">›</span>
+        <div id="authAccountLinks" style="display:none;">
+            <div class="settings-row settings-row-link">
+                <span>Edit profile</span>
+                <span class="settings-chevron">›</span>
+            </div>
+            <div class="settings-row settings-row-link">
+                <span>Change password</span>
+                <span class="settings-chevron">›</span>
+            </div>
         </div>
         <div class="settings-row settings-row-link">
             <span>Privacy & data</span>
@@ -1799,7 +1859,20 @@
             <span class="settings-chevron">›</span>
         </div>
 
-        <button class="btn btn-ghost btn-block" style="margin-top:20px; color:var(--plate-red); border-color:rgba(220,74,63,0.3);">Log Out</button>
+        <button class="btn btn-ghost btn-block" id="authLogoutBtn" style="display:none; margin-top:20px; color:var(--plate-red); border-color:rgba(220,74,63,0.3);" onclick="handleLogout()">Log Out</button>
+    </div>
+</div>
+
+<!-- ===== Login / Sign Up modal — separate overlay so it can stack above
+     the Account panel the same way the Add-Workout picker stacks above
+     the routine builder. ===== -->
+<div class="modal-overlay centered add-workout-overlay" id="authOverlay" onclick="if(event.target===this) closeAuthModal()">
+    <div class="modal-sheet" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title" id="authModalTitle">Log In</span>
+            <button class="modal-close" onclick="closeAuthModal()">&times;</button>
+        </div>
+        <div class="modal-body compact-form" id="authModalBody"></div>
     </div>
 </div>
 
@@ -3220,6 +3293,7 @@ function openAccountPanel() {
     const el = document.getElementById('accountPanel');
     const alreadyOpen = el.classList.contains('open');
     el.classList.add('open');
+    refreshAuthUI();
     if (!alreadyOpen) pushNav('accountPanel');
 }
 
@@ -3342,21 +3416,13 @@ function renderDayView() {
     }
 
     wrap.innerHTML = entries.map((s, i) => {
-        let cardHtml;
-        if (s.status === 'scheduled') cardHtml = renderInlineWorkout(dateStr, s.routineId);
-        else if (s.status === 'completed') cardHtml = renderCompletedDayCard(s);
-        else cardHtml = renderMissedDayCard(s);
-
-        if (entries.length > 1) {
-            const reorderControls = `
-                <div class="day-entry-reorder">
-                    <span class="day-entry-reorder-label">Order</span>
-                    <button class="mini-btn" onclick="moveDayEntry('${dateStr}', ${i}, -1)" ${i === 0 ? 'disabled' : ''} aria-label="Move up">↑</button>
-                    <button class="mini-btn" onclick="moveDayEntry('${dateStr}', ${i}, 1)" ${i === entries.length - 1 ? 'disabled' : ''} aria-label="Move down">↓</button>
-                </div>`;
-            return `<div class="day-entry-wrap">${reorderControls}${cardHtml}</div>`;
-        }
-        return cardHtml;
+        const orderBtns = entries.length > 1 ? `
+            ${i > 0 ? `<button class="mini-btn" onclick="moveDayEntry('${dateStr}', ${i}, -1)" aria-label="Move up">↑</button>` : ''}
+            ${i < entries.length - 1 ? `<button class="mini-btn" onclick="moveDayEntry('${dateStr}', ${i}, 1)" aria-label="Move down">↓</button>` : ''}
+        ` : '';
+        if (s.status === 'scheduled') return renderInlineWorkout(dateStr, s.routineId, orderBtns);
+        if (s.status === 'completed') return renderCompletedDayCard(s, orderBtns);
+        return renderMissedDayCard(s, orderBtns);
     }).join('');
 
     updateTimerVisibility();
@@ -3432,7 +3498,7 @@ function buildTargetText(exLog, ex) {
     return `Target: ${exLog.targetSets} × ${exLog.reps} @ ${exLog.weight} kg · Rest ${exLog.rest}s · ${status}`;
 }
 
-function renderInlineWorkout(dateStr, routineId) {
+function renderInlineWorkout(dateStr, routineId, orderBtns) {
     const r = routines.find(x => x.id === routineId);
     if (!r) return '';
     const session = getDaySession(dateStr, routineId);
@@ -3440,9 +3506,12 @@ function renderInlineWorkout(dateStr, routineId) {
     return `
         <div class="session-header-bar" style="margin:0 0 16px;">
             <span class="modal-title">${r.name}</span>
-            <button class="icon-btn session-delete-btn" onclick="confirmRemoveDayWorkout('${dateStr}','${routineId}')" aria-label="Remove workout">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13"/></svg>
-            </button>
+            <div style="display:flex; align-items:center; gap:6px;">
+                ${orderBtns || ''}
+                <button class="icon-btn session-delete-btn" onclick="confirmRemoveDayWorkout('${dateStr}','${routineId}')" aria-label="Remove workout">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13"/></svg>
+                </button>
+            </div>
         </div>
         ${session.log.length === 0
             ? `<p style="color:var(--text-faint); font-size:12.5px; padding:8px 0;">This routine has no exercises yet — add some from My Routine.</p>`
@@ -3787,7 +3856,7 @@ function confirmRemoveDayWorkout(dateStr, routineId) {
     );
 }
 
-function renderCompletedDayCard(s) {
+function renderCompletedDayCard(s, orderBtns) {
     const r = routines.find(x => x.id === s.routineId);
     const h = s.historyId ? workoutHistory.find(x => x.id === s.historyId) : null;
 
@@ -3795,14 +3864,20 @@ function renderCompletedDayCard(s) {
         return `
         <div class="session-header-bar" style="margin:0 0 16px;">
             <span class="modal-title">${r ? r.name : 'Routine'}</span>
-            <span class="tag" style="color:var(--plate-green); background:var(--plate-green-dim);">Completed</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+                ${orderBtns || ''}
+                <span class="tag" style="color:var(--plate-green); background:var(--plate-green-dim);">Completed</span>
+            </div>
         </div>`;
     }
 
     return `
         <div class="session-header-bar" style="margin:0 0 16px;">
             <span class="modal-title">${r ? r.name : h.routineName}</span>
-            <span class="tag" style="color:var(--plate-green); background:var(--plate-green-dim);">Completed</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+                ${orderBtns || ''}
+                <span class="tag" style="color:var(--plate-green); background:var(--plate-green-dim);">Completed</span>
+            </div>
         </div>
         <p style="color:var(--text-muted); font-size:12.5px; margin:-8px 0 14px;">${formatDuration(h.durationMin)} · ${h.volume.toLocaleString()} kg volume</p>
         ${h.exercises.map(ex => {
@@ -3823,13 +3898,16 @@ function renderCompletedDayCard(s) {
     `;
 }
 
-function renderMissedDayCard(s) {
+function renderMissedDayCard(s, orderBtns) {
     const r = routines.find(x => x.id === s.routineId);
     return `
     <div class="routine-card">
         <div class="routine-card-top">
             <span class="routine-name">${r ? r.name : 'Routine'}</span>
-            <span class="tag" style="color:var(--plate-red); background:var(--plate-red-dim);">Missed</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+                ${orderBtns || ''}
+                <span class="tag" style="color:var(--plate-red); background:var(--plate-red-dim);">Missed</span>
+            </div>
         </div>
         <p style="font-size:12.5px; color:var(--text-faint);">This workout wasn't completed on its scheduled day.</p>
     </div>`;
@@ -3931,8 +4009,11 @@ function computeStreak() {
 // real history — it used to be static placeholder text ("6") that never
 // actually reflected anything.
 function updateStreakBadge() {
+    const streak = computeStreak();
     const el = document.getElementById('streakTop');
-    if (el) el.textContent = computeStreak();
+    if (el) el.textContent = streak;
+    const elAccount = document.getElementById('streakAccountPanel');
+    if (elAccount) elAccount.textContent = streak;
 }
 
 function getWeekRange(referenceDate) {
@@ -4111,6 +4192,7 @@ function performClose(kind) {
     else if (kind === 'video') _doCloseVideo();
     else if (kind === 'timerPopover') _doCloseTimerPopover();
     else if (kind === 'addWorkoutPicker') _doCloseAddWorkoutPicker();
+    else if (kind === 'authOverlay') _doCloseAuthModal();
 }
 
 window.addEventListener('popstate', () => {
@@ -4596,6 +4678,244 @@ function syncTopbarHeight() {
 }
 window.addEventListener('resize', syncTopbarHeight);
 
+/* =========================================================
+   PHASE 3 — USER AUTHENTICATION (Supabase)
+   Everything in this section is additive: it never touches
+   STORAGE_KEY, saveState(), loadState(), or any workout/routine/
+   history/exercise data. Auth state lives entirely in Supabase's
+   own session storage, separate from 'kaizen-data'.
+   ========================================================= */
+
+/* ---- AUTH CONFIG — fill these in from your Supabase project
+   settings (Project Settings -> API). Only the public "anon" key
+   ever belongs here — never the service_role/secret key. ---- */
+const SUPABASE_URL = 'https://qzdraggltagunhgbgqjt.supabase.co'; // base project URL — the client library appends /auth/v1, /rest/v1, etc. itself
+const SUPABASE_ANON_KEY = 'sb_publishable_MDZU6M3D-z5mbFS-9dy1gQ_sf6OpfKn'; // public/publishable key — safe for the browser, never the secret/service-role key
+
+let supabaseClient = null;
+try {
+    if (window.supabase && SUPABASE_URL.startsWith('http')) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+} catch (e) { /* left unconfigured — app still works fully without auth */ }
+
+let currentAuthUser = null; // Supabase user object, or null when logged out
+let authMode = 'login'; // 'login' | 'signup' — which form the modal is showing
+
+function isAuthConfigured() {
+    return !!supabaseClient;
+}
+
+function isAuthenticated() {
+    return !!currentAuthUser;
+}
+
+function getCurrentUser() {
+    return currentAuthUser;
+}
+
+// Friendlier text for the error cases explicitly called out in the spec.
+function describeAuthError(error) {
+    if (!error) return 'Something went wrong. Please try again.';
+    const msg = (error.message || '').toLowerCase();
+    if (msg.includes('invalid login credentials')) return 'Wrong email or password.';
+    if (msg.includes('user already registered') || msg.includes('already registered')) return 'An account with that email already exists — try logging in instead.';
+    if (msg.includes('password') && (msg.includes('weak') || msg.includes('at least') || msg.includes('6 characters'))) return 'That password is too weak — use at least 6 characters.';
+    if (msg.includes('email') && msg.includes('invalid')) return 'That doesn\'t look like a valid email address.';
+    if (msg.includes('email not confirmed') || msg.includes('confirm')) return 'Please verify your email before logging in — check your inbox.';
+    if (msg.includes('network') || msg.includes('fetch')) return 'Network error — check your connection and try again.';
+    if (msg.includes('session') && msg.includes('expired')) return 'Your session expired — please log in again.';
+    return error.message || 'Something went wrong. Please try again.';
+}
+
+/* ---- Modal: separate overlay layer (same pattern as the Add-Workout
+   picker) so it can stack above the Account panel without closing it. ---- */
+function openAuthModal(mode) {
+    if (!isAuthConfigured()) {
+        showToast('Sign-in isn\'t configured yet — add your Supabase URL/key in the code.');
+        return;
+    }
+    authMode = mode || 'login';
+    renderAuthModal();
+    const overlay = document.getElementById('authOverlay');
+    const alreadyOpen = overlay.classList.contains('open');
+    overlay.classList.add('open');
+    if (!alreadyOpen) pushNav('authOverlay');
+}
+
+function closeAuthModal() {
+    requestClose('authOverlay');
+}
+
+function _doCloseAuthModal() {
+    document.getElementById('authOverlay').classList.remove('open');
+}
+
+function switchAuthMode(mode) {
+    authMode = mode;
+    renderAuthModal();
+}
+
+function renderAuthModal() {
+    document.getElementById('authModalTitle').textContent = authMode === 'signup' ? 'Sign Up' : 'Log In';
+    document.getElementById('authModalBody').innerHTML = `
+        <div class="field-group">
+            <label class="field-label">Email</label>
+            <input class="field-input" id="authEmail" type="email" placeholder="you@example.com" autocomplete="email">
+        </div>
+        <div class="field-group">
+            <label class="field-label">Password</label>
+            <input class="field-input" id="authPassword" type="password" placeholder="${authMode === 'signup' ? 'At least 6 characters' : 'Your password'}" autocomplete="${authMode === 'signup' ? 'new-password' : 'current-password'}">
+        </div>
+        <button class="btn btn-primary" style="width:100%;" id="authSubmitBtn" onclick="${authMode === 'signup' ? 'handleEmailSignup()' : 'handleEmailLogin()'}">${authMode === 'signup' ? 'Create Account' : 'Log In'}</button>
+        <div style="display:flex; align-items:center; gap:10px; margin:14px 0;">
+            <div style="flex:1; height:1px; background:var(--border);"></div>
+            <span style="font-size:11px; color:var(--text-faint);">OR</span>
+            <div style="flex:1; height:1px; background:var(--border);"></div>
+        </div>
+        <button class="btn" style="width:100%; background:var(--bg-elevated-2); color:var(--text); border:1.5px solid var(--border); display:flex; align-items:center; justify-content:center; gap:8px;" onclick="handleGoogleLogin()">
+            <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Continue with Google
+        </button>
+        <p style="text-align:center; font-size:12.5px; color:var(--text-muted); margin:16px 0 0;">
+            ${authMode === 'signup' ? 'Already have an account?' : 'New here?'}
+            <a href="javascript:void(0)" onclick="switchAuthMode('${authMode === 'signup' ? 'login' : 'signup'}')" style="color:var(--accent); font-weight:600; text-decoration:none;">${authMode === 'signup' ? 'Log In' : 'Sign Up'}</a>
+        </p>
+    `;
+}
+
+async function handleEmailSignup() {
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    if (!email || !password) { showToast('Enter an email and password first'); return; }
+    const btn = document.getElementById('authSubmitBtn');
+    btn.disabled = true; btn.textContent = 'Creating account…';
+    try {
+        const { data, error } = await supabaseClient.auth.signUp({ email, password });
+        if (error) { showToast(describeAuthError(error)); return; }
+        if (data && data.user && !data.session) {
+            // Email confirmation required — Supabase does not consider this
+            // user authenticated yet, and neither do we.
+            closeAuthModal();
+            showToast('Account created — check your email to verify before logging in.');
+        } else if (data && data.session) {
+            closeAuthModal();
+            showToast('Account created and logged in');
+        }
+    } catch (e) {
+        showToast(describeAuthError(e));
+    } finally {
+        btn.disabled = false; btn.textContent = 'Create Account';
+    }
+}
+
+async function handleEmailLogin() {
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value;
+    if (!email || !password) { showToast('Enter your email and password'); return; }
+    const btn = document.getElementById('authSubmitBtn');
+    btn.disabled = true; btn.textContent = 'Logging in…';
+    try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) { showToast(describeAuthError(error)); return; }
+        if (data && data.session) {
+            closeAuthModal();
+            showToast('Logged in');
+        }
+    } catch (e) {
+        showToast(describeAuthError(e));
+    } finally {
+        btn.disabled = false; btn.textContent = 'Log In';
+    }
+}
+
+async function handleGoogleLogin() {
+    try {
+        const { error } = await supabaseClient.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: window.location.href }
+        });
+        // On success this redirects away from the page — control doesn't
+        // normally return here. An error at this point means the request
+        // itself failed to start (e.g. provider misconfigured), not that
+        // the user cancelled the Google popup (that happens after redirect
+        // and comes back as no session, handled by onAuthStateChange).
+        if (error) showToast(describeAuthError(error));
+    } catch (e) {
+        showToast(describeAuthError(e));
+    }
+}
+
+async function handleLogout() {
+    if (!supabaseClient) return;
+    try {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) { showToast(describeAuthError(error)); return; }
+        // Deliberately does nothing to localStorage/'kaizen-data' — workout
+        // data is untouched by logging out.
+        showToast('Logged out');
+    } catch (e) {
+        showToast(describeAuthError(e));
+    }
+}
+
+// Reflects currentAuthUser into both the Account panel and the topbar,
+// and gates the whole app behind login — body starts with class="gated"
+// in the HTML, this is what removes it once a real session is confirmed.
+function refreshAuthUI() {
+    document.body.classList.toggle('gated', !isAuthenticated());
+    const gateNote = document.getElementById('authGateNote');
+    if (gateNote) gateNote.style.display = isAuthConfigured() ? 'none' : 'block';
+
+    const loggedOutView = document.getElementById('authLoggedOutView');
+    const loggedInView = document.getElementById('authLoggedInView');
+    const logoutBtn = document.getElementById('authLogoutBtn');
+    const accountLinks = document.getElementById('authAccountLinks');
+    if (!loggedOutView || !loggedInView) return; // panel not in DOM yet
+
+    if (isAuthenticated()) {
+        loggedOutView.style.display = 'none';
+        loggedInView.style.display = 'block';
+        logoutBtn.style.display = 'block';
+        accountLinks.style.display = 'block';
+        const email = currentAuthUser.email || '';
+        const name = (currentAuthUser.user_metadata && currentAuthUser.user_metadata.full_name) || email.split('@')[0] || 'Account';
+        document.getElementById('authUserName').textContent = name;
+        document.getElementById('authUserEmail').textContent = email;
+        document.getElementById('authAvatarInitials').textContent = (name.trim()[0] || '?').toUpperCase();
+    } else {
+        loggedOutView.style.display = 'block';
+        loggedInView.style.display = 'none';
+        logoutBtn.style.display = 'none';
+        accountLinks.style.display = 'none';
+    }
+}
+
+// Session persistence: on load, ask Supabase whether a session already
+// exists (survives refresh) before assuming logged-out.
+async function initAuth() {
+    if (!supabaseClient) {
+        // Not configured yet — the app stays gated (body starts with
+        // class="gated"), and refreshAuthUI() shows the front page's
+        // "not configured" note instead of leaving it blank.
+        refreshAuthUI();
+        return;
+    }
+    try {
+        const { data } = await supabaseClient.auth.getSession();
+        currentAuthUser = data && data.session ? data.session.user : null;
+    } catch (e) {
+        currentAuthUser = null;
+    }
+    refreshAuthUI();
+
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+        currentAuthUser = session ? session.user : null;
+        refreshAuthUI();
+    });
+}
+
+
 initTheme();
 loadState(); // restore saved data if this browser has any; otherwise the seed mock data above stands
 mergeNewDefaultExercises(); // bring in any library additions an older save wouldn't have
@@ -4609,6 +4929,7 @@ renderProgress();
 renderDayView();
 updateTimerVisibility();
 syncTopbarHeight();
+initAuth(); // Phase 3 — checks for an existing Supabase session; app works fully even if unconfigured
 </script>
 </body>
 </html>
